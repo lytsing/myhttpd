@@ -135,8 +135,9 @@ void canot_do(int fd)
 void header(FILE *fp, const char *content_type)
 {
 	fprintf(fp, "HTTP/1.0 200 OK\r\n");
-	if (content_type)
+	if (content_type) {
 		fprintf(fp, "Content-type: %s\r\n", content_type);
+	}
 }
 
 
@@ -246,8 +247,10 @@ int do_cat(const char *f, int fd)
 	if (fpsock != NULL && fpfile != NULL) {
 		header(fpsock, content);
 		fprintf(fpsock, "\r\n");
-		while ((c = getc(fpfile)) != EOF)
+
+		while ((c = getc(fpfile)) != EOF) {
 			putc(c, fpsock);
+		}
 
 		fclose(fpfile);
 		fclose(fpsock);

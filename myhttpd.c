@@ -25,7 +25,7 @@
 #define BACKLOG 10
 #define HOSTLEN 32
 
-#define  MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 typedef struct _MYHTTPD_CONF {
 	int port;
@@ -48,21 +48,23 @@ int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
 	char *value;
 
 	fp = fopen(file, "r");
-	if (fp == NULL)
+	if (fp == NULL) {
 		return -1;
+	}
 
 	while ((fgets(buf, sizeof(buf), fp)) != NULL) {
 		len = strlen(buf);
 
-		if (buf[len - 1 ] == '\n')
+		if (buf[len - 1 ] == '\n') {
 			buf[len - 1] = '\0';
+		}
 
 		name  = strtok(buf, "=");
 		value = strtok(0, "=");
 
 		if (name && value) {
 			if (strcmp(name, "Directory") == 0) {
-				strcpy(conf->root_dir, value);
+				strncpy(conf->root_dir, value, sizeof(conf->root_dir));
 			} else if (strcmp(name, "Port") == 0) {
 				conf->port = atoi(value);
 			}
@@ -332,7 +334,7 @@ int main(int argc, char *argv[])
 
 		if (FD_ISSET(sock, &r)) {
 			new_sock = accept(sock, (struct sockaddr*)&pin, &addrlen);
-			printf("server: got connection from %s\n",inet_ntoa(pin.sin_addr));
+			printf("server: got connection from %s\n", inet_ntoa(pin.sin_addr));
 			FD_SET(new_sock, &rfds);
 			max_fd = MAX(max_fd, new_sock);
 		}

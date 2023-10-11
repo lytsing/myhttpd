@@ -48,9 +48,13 @@ typedef struct _MYHTTPD_CONF {
     char root_dir[256];
 } MYHTTPD_CONF;
 
+static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf);
+static int make_server_socket(int portnum);
+static void process_rq(char *rq, int fd);
+
 static MYHTTPD_CONF conf = {0};
 
-static void sigchld_handler(int s)
+void sigchld_handler(int s)
 {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
@@ -127,7 +131,7 @@ static int make_server_socket(int portnum)
     return make_server_socket_q(portnum, BACKLOG);
 }
 
-static void do_404(const char *item, int fd)
+void do_404(const char *item, int fd)
 {
     FILE *fp = fdopen(fd, "w");
 
@@ -138,7 +142,7 @@ static void do_404(const char *item, int fd)
     fclose(fp);
 }
 
-static void canot_do(int fd)
+void canot_do(int fd)
 {
     FILE *fp = fdopen(fd, "w");
 
@@ -150,7 +154,7 @@ static void canot_do(int fd)
 }
 
 
-static void header(FILE *fp, const char *content_type)
+void header(FILE *fp, const char *content_type)
 {
     fprintf(fp, "HTTP/1.0 200 OK\r\n");
     if (content_type) {
@@ -159,21 +163,21 @@ static void header(FILE *fp, const char *content_type)
 }
 
 
-static int not_exist(const char *f)
+int not_exist(const char *f)
 {
     struct stat info;
 
     return (stat(f, &info) == -1);
 }
 
-static int isadir(const char *f)
+int isadir(const char *f)
 {
     struct stat st;
 
     return (stat(f, &st) != 0 && S_ISDIR(st.st_mode));
 }
 
-static int do_ls(const char *dir, int fd)
+int do_ls(const char *dir, int fd)
 {
     FILE *fp;
 
@@ -194,14 +198,14 @@ static int do_ls(const char *dir, int fd)
 /*
  * skip over all request info until a CRNL is seen
  */
-static void read_til_crnl(FILE *fp)
+void read_til_crnl(FILE *fp)
 {
     char buf[BUFSIZ] = { 0 };
     while (fgets(buf, BUFSIZ, fp) != NULL && strcmp(buf, "\r\n") != 0);
 }
 
 /* detect the filename's externsion */
-static char *file_type(const char *f)
+char *file_type(const char *f)
 {
     char *cp;
 
@@ -212,7 +216,7 @@ static char *file_type(const char *f)
     return "";
 }
 
-static int isexec(const char *f)
+int isexec(const char *f)
 {
     struct stat st;
 
@@ -225,7 +229,7 @@ static int isexec(const char *f)
 }
 
 /* execute cmd */
-static int do_exec(char *prog, int fd)
+int do_exec(char *prog, int fd)
 {
     FILE *fp;
 
@@ -243,7 +247,7 @@ static int do_exec(char *prog, int fd)
 }
 
 /* view the file's content */
-static int do_cat(const char *f, int fd)
+int do_cat(const char *f, int fd)
 {
     char *extension = file_type(f);
     char *content = "text/plain";

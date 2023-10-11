@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2017 http://lytsing.org
+ * Copyright (C) 2009-2023 https://lytsing.org
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 
 /*
- * a simple http web service
- * date: 2009-08-01 15:38:50
+ * A simple http web service.
+ * Created at: 2009-08-01 15:38:50
  */
 
 #include <unistd.h>
@@ -45,17 +45,17 @@
 
 typedef struct _MYHTTPD_CONF {
     int port;
-    char root_dir[255];
+    char root_dir[256];
 } MYHTTPD_CONF;
 
 static MYHTTPD_CONF conf = {0};
 
-void sigchld_handler(int s)
+static void sigchld_handler(int s)
 {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
+static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
 {
     FILE *fp;
     char buf[256];
@@ -76,7 +76,7 @@ int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
         }
 
         name  = strtok(buf, "=");
-        value = strtok(0, "=");
+        value = strtok(NULL, "=");
 
         if (name && value) {
             if (strcmp(name, "Directory") == 0) {
@@ -90,7 +90,7 @@ int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
     return 1;
 }
 
-int make_server_socket_q(int portnum, int backlog)
+static int make_server_socket_q(int portnum, int backlog)
 {
     struct sockaddr_in saddr;
     int sock_id;
@@ -122,12 +122,12 @@ int make_server_socket_q(int portnum, int backlog)
     }
 }
 
-int make_server_socket(int portnum)
+static int make_server_socket(int portnum)
 {
     return make_server_socket_q(portnum, BACKLOG);
 }
 
-void do_404(const char *item, int fd)
+static void do_404(const char *item, int fd)
 {
     FILE *fp = fdopen(fd, "w");
 
@@ -138,7 +138,7 @@ void do_404(const char *item, int fd)
     fclose(fp);
 }
 
-void canot_do(int fd)
+static void canot_do(int fd)
 {
     FILE *fp = fdopen(fd, "w");
 
@@ -150,7 +150,7 @@ void canot_do(int fd)
 }
 
 
-void header(FILE *fp, const char *content_type)
+static void header(FILE *fp, const char *content_type)
 {
     fprintf(fp, "HTTP/1.0 200 OK\r\n");
     if (content_type) {
@@ -159,21 +159,21 @@ void header(FILE *fp, const char *content_type)
 }
 
 
-int not_exist(const char *f)
+static int not_exist(const char *f)
 {
     struct stat info;
 
     return (stat(f, &info) == -1);
 }
 
-int isadir(const char *f)
+static int isadir(const char *f)
 {
     struct stat st;
 
     return (stat(f, &st) != 0 && S_ISDIR(st.st_mode));
 }
 
-int do_ls(const char *dir, int fd)
+static int do_ls(const char *dir, int fd)
 {
     FILE *fp;
 
@@ -194,14 +194,14 @@ int do_ls(const char *dir, int fd)
 /*
  * skip over all request info until a CRNL is seen
  */
-void read_til_crnl(FILE *fp)
+static void read_til_crnl(FILE *fp)
 {
     char buf[BUFSIZ] = { 0 };
     while (fgets(buf, BUFSIZ, fp) != NULL && strcmp(buf, "\r\n") != 0);
 }
 
 /* detect the filename's externsion */
-char *file_type(const char *f)
+static char *file_type(const char *f)
 {
     char *cp;
 
@@ -212,7 +212,7 @@ char *file_type(const char *f)
     return "";
 }
 
-int isexec(const char *f)
+static int isexec(const char *f)
 {
     struct stat st;
 
@@ -225,7 +225,7 @@ int isexec(const char *f)
 }
 
 /* execute cmd */
-int do_exec(char *prog, int fd)
+static int do_exec(char *prog, int fd)
 {
     FILE *fp;
 
@@ -243,7 +243,7 @@ int do_exec(char *prog, int fd)
 }
 
 /* view the file's content */
-int do_cat(const char *f, int fd)
+static int do_cat(const char *f, int fd)
 {
     char *extension = file_type(f);
     char *content = "text/plain";
@@ -277,7 +277,7 @@ int do_cat(const char *f, int fd)
     exit(0);
 }
 
-void process_rq(char *rq, int fd)
+static void process_rq(char *rq, int fd)
 {
     char cmd[BUFSIZ] = {0};
     char arg[BUFSIZ] = {0};

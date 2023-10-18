@@ -235,6 +235,7 @@ int do_exec(char *prog, int fd)
 
     fp = fdopen(fd, "w");
     header(fp, NULL);
+    fprintf(fp, "\r\n");
     fflush(fp);
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);

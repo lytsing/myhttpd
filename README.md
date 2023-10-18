@@ -23,12 +23,17 @@ Test the URL request:
 
 ```
 curl http://localhost:8000/index.html
+curl http://localhost:8000/hello
+curl http://localhost:8000/hello.cgi
 ```
 
 or use browser to open it.
 
 ## Others
 
+* `myhttpd.conf` Configure file which can change the listen port and directory.
 * `webclient.c` a simple web client connect to some host.
 * `wget.c` A implify wget implement.
+* `hello.cgi` Bash shell writes CGI.
+* `hello.c` C language writes CGI.
 

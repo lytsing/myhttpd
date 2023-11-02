@@ -4,6 +4,7 @@
  * the source for an http page.
  *
  * webclient.c written by detour@metalshell.com
+ * Copyright 2009 detour@metalshell.com
  * run: ./webclient <host>
  *
  * http://www.metalshell.com/
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* read the socket until its clear then exit */
-    while ( (bufsize = read(sockid, buffer, sizeof(buffer) - 1))) {
+    while ((bufsize = read(sockid, buffer, sizeof(buffer) - 1))) {
         write(1, buffer, bufsize);
     }
 

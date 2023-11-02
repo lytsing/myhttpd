@@ -41,7 +41,7 @@
 #define BACKLOG 10
 #define HOSTLEN 32
 
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef struct _MYHTTPD_CONF {
     int port;
@@ -54,13 +54,11 @@ static void process_rq(char *rq, int fd);
 
 static MYHTTPD_CONF conf = {0};
 
-void sigchld_handler(int s)
-{
+void sigchld_handler(int s) {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
-{
+static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf) {
     FILE *fp;
     char buf[256];
     int len = 0;
@@ -94,8 +92,7 @@ static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf)
     return 1;
 }
 
-static int make_server_socket_q(int portnum, int backlog)
-{
+static int make_server_socket_q(int portnum, int backlog) {
     struct sockaddr_in saddr;
     int sock_id;
     socklen_t opt = 1;
@@ -126,13 +123,11 @@ static int make_server_socket_q(int portnum, int backlog)
     }
 }
 
-static int make_server_socket(int portnum)
-{
+static int make_server_socket(int portnum) {
     return make_server_socket_q(portnum, BACKLOG);
 }
 
-void do_404(const char *item, int fd)
-{
+void do_404(const char *item, int fd) {
     FILE *fp = fdopen(fd, "w");
 
     fprintf(fp, "HTTP/1.0 404 Not Found\r\n");
@@ -142,8 +137,7 @@ void do_404(const char *item, int fd)
     fclose(fp);
 }
 
-void canot_do(int fd)
-{
+void canot_do(int fd) {
     FILE *fp = fdopen(fd, "w");
 
     fprintf(fp, "HTTP/1.0 501 Not Implemented\r\n");
@@ -154,8 +148,7 @@ void canot_do(int fd)
 }
 
 
-void header(FILE *fp, const char *content_type)
-{
+void header(FILE *fp, const char *content_type) {
     fprintf(fp, "HTTP/1.0 200 OK\r\n");
     if (content_type) {
         fprintf(fp, "Content-type: %s\r\n", content_type);
@@ -163,22 +156,19 @@ void header(FILE *fp, const char *content_type)
 }
 
 
-int not_exist(const char *f)
-{
+int not_exist(const char *f) {
     struct stat info;
 
     return (stat(f, &info) == -1);
 }
 
-int isadir(const char *f)
-{
+int isadir(const char *f) {
     struct stat st;
 
     return (stat(f, &st) != 0 && S_ISDIR(st.st_mode));
 }
 
-int do_ls(const char *dir, int fd)
-{
+int do_ls(const char *dir, int fd) {
     FILE *fp;
 
     fp = fdopen(fd, "w");
@@ -198,15 +188,13 @@ int do_ls(const char *dir, int fd)
 /*
  * skip over all request info until a CRNL is seen
  */
-void read_til_crnl(FILE *fp)
-{
+void read_til_crnl(FILE *fp) {
     char buf[BUFSIZ] = { 0 };
     while (fgets(buf, BUFSIZ, fp) != NULL && strcmp(buf, "\r\n") != 0);
 }
 
 /* detect the filename's externsion */
-char *file_type(const char *f)
-{
+char *file_type(const char *f) {
     char *cp;
 
     if ((cp = strrchr(f, '.')) != NULL) {
@@ -216,8 +204,7 @@ char *file_type(const char *f)
     return "";
 }
 
-int isexec(const char *f)
-{
+int isexec(const char *f) {
     struct stat st;
 
     if (stat(f, &st) < 0) {
@@ -229,8 +216,7 @@ int isexec(const char *f)
 }
 
 /* execute cmd */
-int do_exec(char *prog, int fd)
-{
+int do_exec(char *prog, int fd) {
     FILE *fp;
 
     fp = fdopen(fd, "w");
@@ -248,8 +234,7 @@ int do_exec(char *prog, int fd)
 }
 
 /* view the file's content */
-int do_cat(const char *f, int fd)
-{
+int do_cat(const char *f, int fd) {
     char *extension = file_type(f);
     char *content = "text/plain";
     FILE *fpsock = NULL;
@@ -282,15 +267,14 @@ int do_cat(const char *f, int fd)
     exit(0);
 }
 
-static void process_rq(char *rq, int fd)
-{
+static void process_rq(char *rq, int fd) {
     char cmd[BUFSIZ] = {0};
     char arg[BUFSIZ] = {0};
 
     if (fork() != 0)    /* if is child pid, continue. */
         return;         /* if is parent pid, return. */
 
-    strcpy(arg, conf.root_dir);
+    snprintf(arg, sizeof(arg), "%s", conf.root_dir);
 
     if (sscanf(rq, "%s %s", cmd, arg + strlen(conf.root_dir)) != 2)
         return;
@@ -309,8 +293,7 @@ static void process_rq(char *rq, int fd)
         do_cat(arg, fd);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     int sock, new_sock;
     struct sockaddr_in pin;
     socklen_t addrlen;
@@ -336,7 +319,7 @@ int main(int argc, char *argv[])
     FD_SET(sock, &rfds);
     max_fd = sock;
 
-    sa.sa_handler = sigchld_handler; // reap all dead processes
+    sa.sa_handler = sigchld_handler;  // reap all dead processes
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {

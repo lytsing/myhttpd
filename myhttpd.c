@@ -58,74 +58,6 @@ void sigchld_handler(int s) {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf) {
-    FILE *fp;
-    char buf[256];
-    int len = 0;
-    char *name;
-    char *value;
-
-    fp = fopen(file, "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    while ((fgets(buf, sizeof(buf), fp)) != NULL) {
-        len = strlen(buf);
-
-        if (buf[len - 1 ] == '\n') {
-            buf[len - 1] = '\0';
-        }
-
-        name  = strtok(buf, "=");
-        value = strtok(NULL, "=");
-
-        if (name && value) {
-            if (strcmp(name, "Directory") == 0) {
-                strncpy(conf->root_dir, value, sizeof(conf->root_dir));
-            } else if (strcmp(name, "Port") == 0) {
-                conf->port = atoi(value);
-            }
-        }
-    }
-
-    return 1;
-}
-
-static int make_server_socket_q(int portnum, int backlog) {
-    struct sockaddr_in saddr;
-    int sock_id;
-    socklen_t opt = 1;
-
-    sock_id = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock_id == -1) {
-        perror("call to socket");
-        return -1;
-    }
-
-    setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-    memset((void *) &saddr, 0, sizeof(saddr));
-    saddr.sin_port = htons(portnum);
-    saddr.sin_family = AF_INET;
-    saddr.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(sock_id, (struct sockaddr *) &saddr, sizeof(saddr)) != 0) {
-        perror("call to bind");
-        return -1;
-    }
-
-    if (listen(sock_id, backlog) != 0) {
-        perror("call to listen");
-        return -1;
-    } else {
-        return sock_id;
-    }
-}
-
-static int make_server_socket(int portnum) {
-    return make_server_socket_q(portnum, BACKLOG);
-}
 
 void do_404(const char *item, int fd) {
     FILE *fp = fdopen(fd, "w");
@@ -267,32 +199,6 @@ int do_cat(const char *f, int fd) {
     exit(0);
 }
 
-static void process_rq(char *rq, int fd) {
-    char cmd[BUFSIZ] = {0};
-    char arg[BUFSIZ] = {0};
-
-    if (fork() != 0)    /* if is child pid, continue. */
-        return;         /* if is parent pid, return. */
-
-    snprintf(arg, sizeof(arg), "%s", conf.root_dir);
-
-    if (sscanf(rq, "%s %s", cmd, arg + strlen(conf.root_dir)) != 2)
-        return;
-
-    printf("arg == %s\n", arg);
-
-    if (strcmp(cmd, "GET") != 0)
-        canot_do(fd);
-    else if (not_exist(arg))
-        do_404(arg, fd);
-    else if (isadir(arg))
-        do_ls(arg, fd);
-    else if (isexec(arg))
-        do_exec(arg, fd);
-    else
-        do_cat(arg, fd);
-}
-
 int main(int argc, char *argv[]) {
     int sock, new_sock;
     struct sockaddr_in pin;
@@ -357,5 +263,100 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+static int myhttpd_read_conf(const char *file, MYHTTPD_CONF *conf) {
+    FILE *fp;
+    char buf[256];
+    int len = 0;
+    char *name;
+    char *value;
+
+    fp = fopen(file, "r");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    while ((fgets(buf, sizeof(buf), fp)) != NULL) {
+        len = strlen(buf);
+
+        if (buf[len - 1 ] == '\n') {
+            buf[len - 1] = '\0';
+        }
+
+        name  = strtok(buf, "=");
+        value = strtok(NULL, "=");
+
+        if (name && value) {
+            if (strcmp(name, "Directory") == 0) {
+                strncpy(conf->root_dir, value, sizeof(conf->root_dir));
+            } else if (strcmp(name, "Port") == 0) {
+                conf->port = atoi(value);
+            }
+        }
+    }
+
+    return 1;
+}
+
+static int make_server_socket_q(int portnum, int backlog) {
+    struct sockaddr_in saddr;
+    int sock_id;
+    socklen_t opt = 1;
+
+    sock_id = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_id == -1) {
+        perror("call to socket");
+        return -1;
+    }
+
+    setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    memset((void *) &saddr, 0, sizeof(saddr));
+    saddr.sin_port = htons(portnum);
+    saddr.sin_family = AF_INET;
+    saddr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sock_id, (struct sockaddr *) &saddr, sizeof(saddr)) != 0) {
+        perror("call to bind");
+        return -1;
+    }
+
+    if (listen(sock_id, backlog) != 0) {
+        perror("call to listen");
+        return -1;
+    } else {
+        return sock_id;
+    }
+}
+
+static int make_server_socket(int portnum) {
+    return make_server_socket_q(portnum, BACKLOG);
+}
+
+static void process_rq(char *rq, int fd) {
+    char cmd[BUFSIZ] = {0};
+    char arg[BUFSIZ] = {0};
+
+    if (fork() != 0)    /* if is child pid, continue. */
+        return;         /* if is parent pid, return. */
+
+    snprintf(arg, sizeof(arg), "%s", conf.root_dir);
+
+    if (sscanf(rq, "%s %s", cmd, arg + strlen(conf.root_dir)) != 2)
+        return;
+
+    printf("arg == %s\n", arg);
+
+    if (strcmp(cmd, "GET") != 0)
+        canot_do(fd);
+    else if (not_exist(arg))
+        do_404(arg, fd);
+    else if (isadir(arg))
+        do_ls(arg, fd);
+    else if (isexec(arg))
+        do_exec(arg, fd);
+    else
+        do_cat(arg, fd);
 }
 
